@@ -1,0 +1,43 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=634
+
+Inspired by MultipleSearch.vim vimscript #479
+
+This plugin will allow you to highlight a specific search pattern with a specific (pre made) highlight group, and allows you to easily redefine the search pattern and empty a specific pattern. There are 8 possible simultaneous highlight patterns currently available and the script should be easy to modify to add more, etc. The highlight groups are via syntax highlighting and as such your VIM needs +syntax feature.
+
+
+There are 2 commands, 1 to clear all highlighting, 1 to manipulate individule color groups.
+:OTFReset -- to clear all highlighting done by this script. (think :noh) This can probably be shortened to :OTFR on the command line.
+
+:OTF -- takes a count (line number position) to specify the color group to use (1-8). blank string clears highlighting for the specified color group, while the bang (:OTF!) denotes that the specifed string should be treated as a keyword (think register), see below:
+
+Use Like So:
+    Highlight Current Word Under The Cursor:
+    :1OTF <c-r><c-w>
+    :1OTF! w
+    Highlight Current Search Pattern:
+    :1OTF <c-r>/
+    :1OTF! /
+    Use A Pattern From A Register:
+    :1OTF <c-r>"
+    :1OTF! "
+    Just Type The Pattern In Manually:
+    :1OTF \cotf\d
+    Turn Off Coloring For The First Highlight Group:
+    :1OTF
+    :1OTF!
+    Turn Off Coloring For The Second Highlight Group: (etc.)
+    :2OTF
+    :2OTF!
+    Turn Off Coloring For All Groups:
+    :OTFReset
+    Which can probably be shortened to:
+    :OTFR
+
+You can override the default highlight group color definitions by simply defining your own highlight groups for feralotf# (where # is a number from 1 to 8) for example place this in your .vimrc (or color file, etc.):
+" {{{ OVERRIDE On the fly highlight groups.
+hi feralotf1		guifg=#4682B4 guibg=Linen
+hi feralotf2		guifg=Linen
+hi feralotf3		guifg=Linen guibg=azure4
+hi feralotf4		guifg=Linen guibg=PaleGreen4
+" }}}
+
