@@ -1,18 +1,43 @@
 "	vim:ff=unix ts=4 ss=4
 "	vim60:fdm=marker
 "	\file		otf.vim
+"	\date		Sat, 12 Jun 2004 21:42 PST
 "
-"	\brief		On-The-Fly coloring of patterns, Inspired heavily by MultipleSearch.vim (2002 Nov 18, v1.1) by Dan Sharp <dwsharp at hotmail dot com>, this version allows specific colors for specific patterns and easy to redefine a pattern for a color, or uncolor a pattern.
-"	\note		This is an evolution of my FERAL_MatchWord (that used :match)
-"	\note		This is VIMSCRIPT#634, http://vim.sourceforge.net/scripts/script.php?script_id=634.
+"	\brief		On-The-Fly coloring of patterns, Inspired heavily by
+"					MultipleSearch.vim (2002 Nov 18, v1.1) by Dan Sharp
+"					<dwsharp at hotmail dot com>, this version allows specific
+"					colors for specific patterns and easy to redefine a
+"					pattern for a color, or uncolor a pattern.
+"	\note		This is an evolution of my (unpublished) FERAL_MatchWord (that
+"					used :match)
+"	\note		This is VIMSCRIPT#634,
+"					http://vim.sourceforge.net/scripts/script.php?script_id=634.
 "	\note		MultipleSearch.vim is VIMSCRIPT#479,
-"				http://vim.sourceforge.net/scripts/script.php?script_id=479.
+"					http://vim.sourceforge.net/scripts/script.php?script_id=479.
 "
-"	\author		Robert KellyIV <Sreny@SverGbc.Pbz> (Rot13ed)
-"	\date		Wed, 07 May 2003 01:53 Pacific Daylight Time
+"	\author		Robert KellyIV <sreny@rpyrpgvpjvmneq.pbz> (Rot13ed)
 "	\version	$Id$
-"	Version:	0.21
+"	Version:	0.31
 "	History:	{{{
+"	[Feral:164/04@20:58] 0.31
+"	Refinement of :OTF -- just bank (with no keyword) will clear the specified
+"		group, i.e. ":2OTF!" will clear group 2 as will ":2OTF"
+"	BugFix of :OTFG -- stored pattern no longer is surounded by '/' and
+"		requires one param now (the register);
+"	[Feral:163/04@00:16] 0.3
+"	Improvement: :[#]OTFG[!] <register>
+"		which will place the pattern used by the group referanced by [#] into
+"		register <register>. This means that you can ":1OTFG y" to copy the
+"		search pattern used by highlight group 1 into register y.
+"		Added per request of Alexandre Rafalovitch <nensnybi@orn.pbz> (Rot13ed)
+"	[Feral:100/04@17:36] 0.221
+"	BUGFIX: tiny fix to OTFReset, was not clearing the last color
+"	[Feral:151/03@01:47] 0.22
+"		Little bit of clean up and started to make it a proper plugin; still
+"			needs documtation. Undecided about <plug> and :menu.
+"		by the by you can ":nmap <leader>1 :1OTF! W" or the like in your
+"			.vimrc, I am not seeing the point of providing default mappings
+"			(with all the <plug> code, etc.) at the moment.
 "	[Feral:127/03@01:38] 0.21
 "		Improvement: As per a suggestion from Mathieu CLABAUT the feralotf#
 "		highlight groups now use the default keyword, This allows you to
@@ -100,6 +125,11 @@ if exists("loaded_otf")
 endif
 let loaded_otf = 1
 
+let s:save_cpo = &cpo
+set cpo&vim
+
+
+
 " {{{ On the fly match groups.
 " [Feral:127/03@01:35]  As per a suggestion from Mathieu CLABAUT these
 "	highlight groups now use the default keyword, see :h :highlight-default.
@@ -115,6 +145,13 @@ highlight default feralotf7		guifg=black guibg=gray
 highlight default feralotf8		guifg=white guibg=brown
 " }}}
 
+function s:FERAL_OTF_GroupInBounds(p_Group) " {{{
+	if a:p_Group < 1 || a:p_Group > 8
+		return 0
+	else
+		return 1
+	endif
+endfunction " }}}
 
 "	If bang is specified (:OTF!) then treat p_String as a special char to be
 "		expanded (presumably a register)
@@ -124,12 +161,12 @@ highlight default feralotf8		guifg=white guibg=brown
 "	": <c-r>"
 "	/:<c-r>/
 
-function s:FERAL_OTF(p_Group, p_Bang, p_String)
+function s:FERAL_OTF(p_Group, p_Bang, p_String) " {{{
 
 "	echo confirm("p_Group: ".a:p_Group."\n"."p_String: ".a:p_String)
 
 	" Gate: make sure our group number is in bounds.
-	if a:p_Group < 1 || a:p_Group > 8
+	if !s:FERAL_OTF_GroupInBounds(a:p_Group)
 		return
 	endif
 
@@ -148,6 +185,8 @@ function s:FERAL_OTF(p_Group, p_Bang, p_String)
 			let Word = @/
 		elseif a:p_String == "\""
 			let Word = @@
+		elseif a:p_String == "" " blank p_String, clear the group
+			let Word = ""
 		endif
 	endif
 
@@ -160,30 +199,99 @@ function s:FERAL_OTF(p_Group, p_Bang, p_String)
 		" we have a string to highlight, do so.
 "		execute 'syntax match feralotf'.a:p_Group.' "'.a:p_String.'" containedin=ALL'
 		execute 'syntax match feralotf'.a:p_Group.' "'.Word.'" containedin=ALL'
+		echo "OTF: Group #".a:p_Group.' set to "'.Word.'".'
+	else
+		echo "OTF: Group #".a:p_Group.' cleared.'
 	endif
 
-endfunction
+endfunction " }}}
 
 " Loop clear out all of this highlighting.
-function s:FERAL_OTFReset()
+function s:FERAL_OTFReset() " {{{
 
 	" clear the highligh group for each of our colors
 	let NumGroups = 8
 	let Index = 1	" we start at group index 1.
-	while	Index < NumGroups
+	while	Index <= NumGroups
 		execute 'silent syntax clear feralotf'.Index
 		let Index = Index + 1
 	endwhile
+	echo "OTF: Cleared all ".NumGroups." color groups"
 
-endfunction
+endfunction " }}}
+
+" [Feral:162/04@23:05] FERAL_OTF_Get_To_Register
+" \brief	Place the search pattern for the specified group (p_Group) into
+"			the specified register (p_RegisterToUse)
+" \note		This is per request of and for Alexandre Rafalovitch
+"			<nensnybi@orn.pbz> (Rot13ed)
+"
+" If bank then will clear the group specified by p_Group
+"
+" The request, for my referance:
+" ... I would like to be able to copy the pattern out of OTF into a register.
+" That way, I could mark several patterns and then at any point retrieve one
+" of the marked patterns, modify it and then redo the marking. Listing of all
+" patterns and colors would have been nice too, but less essential.
+function s:FERAL_OTF_Get_To_Register(p_Group, p_Bang, p_RegisterToUse) " {{{
+
+	" Gate: make sure our group number is in bounds.
+	if !s:FERAL_OTF_GroupInBounds(a:p_Group)
+		return
+	endif
+
+"hlexists( {name})		Number	TRUE if highlight group {name} exists
+"hlID( {name})			Number	syntax ID of highlight group {name}
+"echo synIDattr(hlID("feralotf2"), "bg")
+":h syn-list
+":syn list feralotf1
+":h redir
+
+
+	let Was_Reg_z = @z
+
+	redir @z
+		execute 'silent syntax list feralotf'.a:p_Group
+		" HACK:	seems the first echo after a redir will be up one line, this
+		"		echo seems to fix that. aka HACK.
+		echo ' '
+	redir END
+	let SynList = @z
+
+	let @z = Was_Reg_z
+	unlet Was_Reg_z
+
+"	echo SynList
+
+
+	"See: :h scanf
+	" Set up the match bit
+	let mx='\<match\>\s*\/\(.*\)\/\s*\<containedin\>'
+	"get the part matching the whole expression
+	let l = matchstr(SynList, mx)
+	"get each item out of the match
+	let Pattern = substitute(l, mx, '\1', '')
+"	echo Pattern
+
+
+	execute "let @".a:p_RegisterToUse."='".Pattern."'"
+	echo "OTF: Group #".a:p_Group."'s pattern, \"".Pattern."\", stored in @".a:p_RegisterToUse."."
+
+
+	" if we are banged then clear the group
+	if a:p_Bang == "!"
+		execute 'silent syntax clear feralotf'.a:p_Group
+		echo 'OTF: Group #'.a:p_Group.' cleared.'
+	endif
+
+endfunction " }}}
 
 
 
+"///////////////////////////////////////////////////////////////////////////
+"// {{{ -[ Commands ]-------------------------------------------------------
+"///////////////////////////////////////////////////////////////////////////
 
-
-"*****************************************************************
-"* Commands
-"*****************************************************************
 :command -nargs=0 OTFReset	call <SID>FERAL_OTFReset()
 "	-count=N    A count (default N) which is specified either in the line
 "		    number position, or as an initial argument (like |:Next|)
@@ -196,7 +304,9 @@ endfunction
 "	(W) \<cword\>				"\\<".expand("<cword>")."\\>"
 "	(") unnamed register		@@
 "	(/) current search string	@/
+"	() CLEAR Specifed group.	-- [Feral:164/04@21:01]
 :command -range=1 -bang -nargs=? OTF		call <SID>FERAL_OTF(<count>, "<bang>",<q-args>)
+:command -range=1 -bang -nargs=1 OTFG		call <SID>FERAL_OTF_Get_To_Register(<count>, "<bang>",<q-args>)
 
 ":command -bang -nargs=? OTF1		call <SID>FERAL_OTF(1, "<bang>", <q-args>)
 ":command -bang -nargs=? OTF2		call <SID>FERAL_OTF(2, "<bang>", <q-args>)
@@ -208,5 +318,80 @@ endfunction
 ":command -bang -nargs=? OTF8		call <SID>FERAL_OTF(8, "<bang>", <q-args>)
 
 
+"// }}} --------------------------------------------------------------------
+
+
+"///////////////////////////////////////////////////////////////////////////
+"// {{{ -[ Mappings ]-------------------------------------------------------
+"///////////////////////////////////////////////////////////////////////////
+
+" [Feral:151/03@01:45] NOTE you can just add something like this in your .vimrc:
+"nmap <leader>1		:1OTF! W<cr>
+"nmap <leader>2		:2OTF! W<cr>
+"nmap <leader>3		:3OTF! W<cr>
+"nmap <leader>4		:4OTF! W<cr>
+"nmap <leader>5		:5OTF! W<cr>
+"nmap <leader>6		:6OTF! W<cr>
+"nmap <leader>7		:7OTF! W<cr>
+"nmap <leader>8		:8OTF! W<cr>
+"nmap <leader>0		:OTFReset<cr>
+
+"
+"
+""noremap <unique> <script> <Plug>OTFPlug_OTF1	<SID>PlugOTF1
+""noremap <SID>PlugOTF1				:call <SID>FERAL_OTF(1, "!", "W")<cr>
+"
+""noremap <unique> <script> <Plug>OTFPlug_OTF1	:call <SID>FERAL_OTF(1, "!", "W")<cr>
+"
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF1		:1OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF2		:2OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF3		:3OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF4		:4OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF5		:5OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF6		:6OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF7		:7OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTF8		:8OTF! W<cr>
+"noremap	<unique>	<script>	<Plug>OTFPlug_OTFReset	:OTFReset<cr>
+"
+"
+"if !hasmapto('<Plug>OTFPlug_OTF1')
+"	map	<unique>	<Leader>o1	<Plug>OTFPlug_OTF1
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF2')
+"	map	<unique>	<Leader>o2	<Plug>OTFPlug_OTF2
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF3')
+"	map	<unique>	<Leader>o3	<Plug>OTFPlug_OTF3
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF4')
+"	map	<unique>	<Leader>o4	<Plug>OTFPlug_OTF4
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF5')
+"	map	<unique>	<Leader>o5	<Plug>OTFPlug_OTF5
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF6')
+"	map	<unique>	<Leader>o6	<Plug>OTFPlug_OTF6
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF7')
+"	map	<unique>	<Leader>o7	<Plug>OTFPlug_OTF7
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTF8')
+"	map	<unique>	<Leader>o8	<Plug>OTFPlug_OTF8
+"endif
+"if !hasmapto('<Plug>OTFPlug_OTFReset')
+"	map	<unique>	<Leader>or	<Plug>OTFPlug_OTFReset
+"endif
+"
+""[Feral:151/03@01:35] Example mapping of using color 1 with search register.
+""	It is the same idea for the other OTF keywords
+""noremap	<unique>	<script>	<Plug>OTFPlug_OTFS1		:1OTF! /<cr>
+""if !hasmapto('<Plug>OTFPlug_OTFS1')
+""	map	<unique>	<Leader>/1	<Plug>OTFPlug_OTFS1
+""endif
+
+"// }}} --------------------------------------------------------------------
+
+
+let &cpo = s:save_cpo
 "// -- if you have ever had a mess of crosslinked files You'd mark you eof too! :)
 "///EOF
