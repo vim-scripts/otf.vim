@@ -9,10 +9,15 @@
 "				http://vim.sourceforge.net/scripts/script.php?script_id=479.
 "
 "	\author		Robert KellyIV <Sreny@SverGbc.Pbz> (Rot13ed)
-"	\date		Sat, 03 May 2003 12:23 Pacific Daylight Time
+"	\date		Wed, 07 May 2003 01:53 Pacific Daylight Time
 "	\version	$Id$
-"	Version:	0.2
+"	Version:	0.21
 "	History:	{{{
+"	[Feral:127/03@01:38] 0.21
+"		Improvement: As per a suggestion from Mathieu CLABAUT the feralotf#
+"		highlight groups now use the default keyword, This allows you to
+"		override these default colors easily.
+"
 "	[Feral:123/03@12:06] 0.2
 "		Small update: converted :OTF1-8 into :OTF which takes a count (line
 "			number position) and takes optional bang to specify string as a
@@ -73,6 +78,21 @@
 "		:OTFReset
 "		Which can probably be shortened to:
 "		:OTFR
+"
+"	Defining Your Own Colors:
+"	Thanks to a suggestion by Mathieu CLABAUT the default highlight groups use
+"		the default keyword, this allows you to specify feralotf# to override
+"		the default color group. See :h :highlight-default
+"
+"	Thus you could have something like this in your favorite color file to
+"		override the first 4 color groups.
+" {{{ OVERRIDE On the fly highlight groups.
+"hi feralotf1		guifg=#4682B4 guibg=Linen
+"hi feralotf2		guifg=Linen
+"hi feralotf3		guifg=Linen guibg=azure4
+"hi feralotf4		guifg=Linen guibg=PaleGreen4
+" }}}
+"
 "	}}}
 
 if exists("loaded_otf")
@@ -81,29 +101,20 @@ endif
 let loaded_otf = 1
 
 " {{{ On the fly match groups.
-" [Feral:122/03@21:08] I am not sure how to determin if a highlight group
-"	already exists so we are blindly always defining the color groups here.
-" If there is no way to determin if a color group already exists I see two
-"	options; require these hilights in the color file (lots of flexability
-"	each colorscheme could have it's own highlight coloring, ofcourse). Or use
-"	a global var to to determin if we should define our default highlight
-"	groups here.
-" We could do both really.
-"highlight feralotf1		guifg=#4682B4 guibg=Linen
-"highlight feralotf2		guifg=Linen  guibg=black
-"highlight feralotf3		guifg=Linen guibg=azure4
-"highlight feralotf4		guifg=Linen guibg=PaleGreen4
-
-highlight feralotf1		guifg=white guibg=red
-highlight feralotf2		guifg=black guibg=yellow
-highlight feralotf3		guifg=white guibg=blue
-highlight feralotf4		guifg=black guibg=green
-highlight feralotf5		guifg=white guibg=magenta
-highlight feralotf6		guifg=black guibg=cyan
-highlight feralotf7		guifg=black guibg=gray
-highlight feralotf8		guifg=white guibg=brown
-
+" [Feral:127/03@01:35]  As per a suggestion from Mathieu CLABAUT these
+"	highlight groups now use the default keyword, see :h :highlight-default.
+"	This allows you to define these groups in your syntax file (or wherever)
+"	to override these default colors. Neat!
+highlight default feralotf1		guifg=white guibg=red
+highlight default feralotf2		guifg=black guibg=yellow
+highlight default feralotf3		guifg=white guibg=blue
+highlight default feralotf4		guifg=black guibg=green
+highlight default feralotf5		guifg=white guibg=magenta
+highlight default feralotf6		guifg=black guibg=cyan
+highlight default feralotf7		guifg=black guibg=gray
+highlight default feralotf8		guifg=white guibg=brown
 " }}}
+
 
 "	If bang is specified (:OTF!) then treat p_String as a special char to be
 "		expanded (presumably a register)
